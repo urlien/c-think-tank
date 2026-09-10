@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>他山之鉴 · 案例卡片</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#eae7df;--card:#fdfcfa;--ink:#1a1a1a;--sub:#5c5c5c;--faint:#a0a0a0;
+  --exp:#0a8f5b;--risk:#c93636;--cyan:#00b8c4;--line:#e6e4dc;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:"Microsoft YaHei",system-ui,sans-serif;
+  background-image:radial-gradient(circle at 15% 10%,rgba(255,255,255,.8),transparent 50%),radial-gradient(circle at 88% 92%,rgba(0,184,196,.04),transparent 45%)}
+
+.top{position:fixed;top:0;left:0;right:0;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;z-index:50}
+.top .brand{font-family:Impact,sans-serif;font-size:17px;letter-spacing:3px;color:var(--ink)}
+.top .brand b{color:var(--exp)}
+.top .side-indicator{font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 14px;border-radius:20px;color:#fff;transition:background .3s}
+.top .count{font-family:Impact,sans-serif;font-size:19px;letter-spacing:2px;color:var(--faint)}
+.top .count span{color:var(--ink)}
+
+.progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:60;transition:width .4s ease,background .4s}
+
+.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;perspective:1800px}
+.slide{position:absolute;width:min(920px,90vw);height:min(680px,85vh);
+  transition:transform .65s cubic-bezier(.7,0,.3,1),opacity .5s ease;will-change:transform,opacity}
+.slide.next{transform:translateX(62vw) rotateY(-16deg) scale(.9);opacity:0;pointer-events:none}
+.slide.prev{transform:translateX(-62vw) rotateY(16deg) scale(.9);opacity:0;pointer-events:none}
+.slide.active{transform:translateX(0) rotateY(0) scale(1);opacity:1}
+
+.card{width:100%;height:100%;background:var(--card);overflow:hidden;
+  display:flex;flex-direction:column;position:relative;
+  box-shadow:0 40px 90px rgba(60,50,30,.15),0 6px 20px rgba(0,0,0,.05)}
+.card.exp{border-radius:24px}
+.card.risk{border-radius:14px}
+.card.exp .bar{height:7px;width:100%;flex-shrink:0;background:linear-gradient(90deg,var(--exp),#12c47a,#7ee8b0)}
+.card.risk .bar{height:7px;width:100%;flex-shrink:0;background:repeating-linear-gradient(45deg,var(--risk) 0,var(--risk) 12px,#e86969 12px,#e86969 24px)}
+
+.card .inner{padding:40px 56px;flex:1;display:flex;flex-direction:column;position:relative;overflow-y:auto}
+.card .ghost{position:absolute;top:-40px;right:20px;font-family:Impact,sans-serif;font-size:240px;line-height:1;
+  color:rgba(0,0,0,.026);pointer-events:none;user-select:none}
+
+/* 侧别标签 —— 明确标注 */
+.card .side-tag{display:inline-block;font-size:13px;font-weight:800;letter-spacing:2px;
+  padding:6px 16px;border-radius:20px;margin-bottom:14px;color:#fff}
+.card.exp .side-tag{background:var(--exp)}
+.card.risk .side-tag{background:var(--risk);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.12) 0,rgba(255,255,255,.12) 6px,transparent 6px,transparent 12px)}
+
+.card .loc{font-size:13px;letter-spacing:3px;color:var(--sub);margin-bottom:10px;font-weight:700;display:inline-block;margin-left:12px}
+
+.card h2{font-size:clamp(23px,2.8vw,34px);font-weight:800;line-height:1.35;letter-spacing:1px;margin-bottom:24px;position:relative;z-index:1}
+
+.card .nums{display:flex;flex-wrap:wrap;gap:44px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+.card .num .v{font-family:Impact,sans-serif;font-size:clamp(36px,4.6vw,52px);line-height:1;letter-spacing:1px}
+.card.exp .num .v{color:var(--exp)}
+.card.risk .num .v{color:var(--risk)}
+.card .num .k{font-size:12px;color:var(--sub);margin-top:10px;letter-spacing:1px}
+
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0}
+.tab{padding:9px 20px;border-radius:24px;border:1px solid var(--line);background:#fff;
+  font-size:14px;color:var(--sub);cursor:pointer;transition:all .25s;font-weight:600}
+.tab:hover{border-color:var(--ink);color:var(--ink)}
+.card.exp .tab.on{background:var(--exp);border-color:var(--exp);color:#fff}
+.card.risk .tab.on{background:var(--risk);border-color:var(--risk);color:#fff}
+
+.panels{position:relative;margin-top:18px;flex:1;overflow-y:auto}
+.panel{display:none;animation:fade .35s ease}
+.panel.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.panel p{font-size:15.5px;line-height:2.05;color:#2e2e2e;margin-bottom:14px}
+.panel p:last-child{margin-bottom:0}
+.panel .em{color:var(--ink);font-weight:700;background:linear-gradient(transparent 62%,rgba(255,214,0,.32) 62%)}
+.panel .ph{color:#b5b5b5;font-style:italic;font-weight:400}
+
+.card .src{margin-top:18px;font-size:12px;color:var(--faint);padding-top:14px;border-top:1px solid var(--line)}
+.card .src b{color:var(--sub);font-weight:600}
+.card .src a{color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(0,184,196,.4);transition:all .25s}
+.card .src a:hover{color:var(--exp);border-bottom-color:var(--exp)}
+
+.nav{position:fixed;bottom:32px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:30px;z-index:50}
+.nav .btn{width:50px;height:50px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;color:var(--ink);
+  box-shadow:0 4px 12px rgba(0,0,0,.05);font-size:20px}
+.nav .btn:hover{background:var(--ink);color:#fff;border-color:var(--ink);transform:translateY(-2px)}
+.nav .btn:disabled{opacity:.3;cursor:not-allowed;transform:none;background:var(--card);color:var(--ink)}
+.nav .dots{display:flex;gap:9px}
+.nav .dot{width:8px;height:8px;border-radius:50%;background:var(--line);cursor:pointer;transition:all .3s}
+.nav .dot.exp.on{background:var(--exp);transform:scale(1.4)}
+.nav .dot.risk.on{background:var(--risk);transform:scale(1.4)}
+.nav .dot:hover{transform:scale(1.3)}
+
+@media(max-width:640px){
+  .card .inner{padding:26px 20px}
+  .card .ghost{font-size:110px;top:0}
+  .card .nums{gap:22px}
+  .top{padding:0 18px}
+  .top .side-indicator{display:none}
+  .nav{gap:16px}
+  .card .nums .num .v{font-size:34px}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="top">
+  <div class="brand">他山之鉴 <b>/</b> 农业招商热中的冷思考</div>
+  <div class="side-indicator" id="sideInd">经验侧 · 可借鉴</div>
+  <div class="count"><span id="cur">01</span> / 11</div>
+</div>
+<div class="stage" id="stage"></div>
+<div class="nav">
+  <button class="btn" id="prevBtn">&#8249;</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="nextBtn">&#8250;</button>
+</div>
+<script>
+var DATA = [
+ {t:"exp",side:"经验侧 · 可借鉴",loc:"浙江",title:"农业标准地实现「地等项目」",
+  nums:[["180亿","撬动社会资本"],["100万亩","计划建成标准地"],["477个","产业项目"]],
+  tabs:[
+    ["来龙去脉", ["项目落地，首先要有地。过去通行的做法是「项目等地」——企业谈好了再去找地、调规、办手续，一来二去往往拖上一年半载，有的项目就在等待中黄了。","浙江的做法反过来：2022年起在全国率先推进农业标准地改革，把土地先整理成「净地」，明确这块地适合招什么项目、有什么准入门槛。企业拿到地就能直接开工。"]],
+    ["关键数据", ["省里每年安排近3亿元财政资金激励农业农村重大项目投资，撬动社会资本投资180亿元，其中特别重大项目省级激励资金最高可达5000万元。","已「调规预留」农业农村发展空间17万亩，计划建成100万亩标准地。2023年推进的556个农业重大项目中，农业产业项目达477个。"]],
+    ["镜鉴", ["与其等项目来了再找地，不如先把净地备好、把准入门槛定好，让好项目来了就能落地，减少「签约容易落地难」的老问题。"]]
+  ],
+  think:"浙江「农业标准地」对投资者是明显利好：把地备好、门槛定清，企业选择面更宽。但这一模式有个前提——地要够多、够灵活，才能做到「地等项目」。苏州农业用地已接近饱和，若要借鉴，须先对全市域土地利用做系统性统筹规划，否则难以落地。",
+  src:"浙江日报 2023-05-06", url:"http://www.legaldaily.com.cn/Village_ruled_by_law/content/2023-05/06/content_8851211.html"},
+
+ {t:"exp",side:"经验侧 · 可借鉴",loc:"深圳",title:"政策法源化，把补贴变成法定权利",
+  nums:[["15条","五链融合举措"],["37条","配套操作规程"],["300万","育种场最高资助"]],
+  tabs:[
+    ["来龙去脉", ["很多地方的农业扶持，靠的是一次次开会、一份份临时通知，「新官不理旧账」、政策变来变去的情况时有发生。","深圳的思路是把政策写进有据可依的制度文件。2023年9月，深圳印发《支持现代农业高质量发展的若干措施》（深市监规〔2023〕4号），围绕五链融合提出15条举措。"]],
+    ["关键数据", ["配套操作规程共7章37条，明确补贴、奖励、贴息、配套四种资助方式，以及核准制、评审制两种审批方式。","核心育种场最高资助300万元。企业拿到的不是一句口头承诺，而是一份公开的、可查询的、有时间表和金额上限的规范性文件。"]],
+    ["镜鉴", ["把政策写进制度文件，比一次次开会协调更稳定，企业的投资预期也更明确。"]]
+  ],
+  think:"深圳把补贴写进正式文件、把标准写死，这正是企业最愿意看到的：规则明确，心里有底，操作起来更放心。但关键在于资金——深圳财政宽裕，苏州经济体量有差距。若照搬深圳的补贴标准，一是在招商竞争中拼不过深圳，二是还没招到多少投资，财政可能先扛不住。",
+  src:"深圳市市场监督管理局 2023-09-06", url:"https://www.sz.gov.cn/zfgb/2023/gb1303/content/post_10832270.html"},
+
+ {t:"exp",side:"经验侧 · 可借鉴",loc:"广州",title:"以场景清单招商",
+  nums:[["50项","应用场景"],["3大类","场景分类"],["2个","新上线平台"]],
+  tabs:[
+    ["来龙去脉", ["招商难，难在供需对不上：政府手里有资源，企业不知道；企业想找机会，找不到入口。","2026年6月，广州发布首批《投资广州农业农村场景清单》，涵盖都市现代农业、农村优质资源、农业科技合作三大类共50项应用场景。"]],
+    ["关键数据", ["同步上线两个平台：广州农业农村招商引资引智服务平台，作为全市统一的农业招商信息枢纽；农村闲置农房「大城小院」农房E租平台，盘活闲置资源发展民宿、文创等新业态。","这种「场景招商」与传统的「政策招商」不同——它靠的不是更高的补贴，而是把真实的机会摆出来。"]],
+    ["镜鉴", ["用「场景」而非单纯「补贴」招商，让企业自己找切入点，比拼政策更可持续。"]]
+  ],
+  think:"广州「场景清单招商」是目前看来最适合苏州的一条——不需要额外砸钱，也不需要大动土地。但它的吸引力也最小，因为它不靠给好处，而靠把需求摆清楚。还需考虑与同层次城市的竞争。综合看，这是最保守、最稳妥的方式。",
+  src:"中新网 2026-06-08", url:"https://finance.sina.com.cn/roll/2026-06-08/doc-iniathze8525015.shtml"},
+
+ {t:"exp",side:"经验侧 · 可借鉴",loc:"佛山三水",title:"链主招商带动集群",
+  nums:[["103亿","农林牧渔总产值"],["150亿","链主项目投资额"],["1.28","城乡收入比"]],
+  tabs:[
+    ["来龙去脉", ["招零散的项目，往往招来一个是一个，形不成气候。佛山三水的做法是招「链主」——招一个能带动整条产业链的龙头企业。","三水区通过引入链主型水产企业，带动产业集群式发展，获授「中国鳜鱼之乡」称号。"]],
+    ["关键数据", ["2025年，当地实现农林牧渔业总产值超103亿元、水产业全产业链综合产值超100亿元、链主项目招商投资额超150亿元，完成「三个百亿」跃升。","城乡居民收入比缩小至1.28。链主招商的逻辑是「以商引商」：一个龙头企业落地，会带来种苗、饲料、加工、冷链等上下游配套企业主动跟进。"]],
+    ["镜鉴", ["招一个链主，往往带来一串配套企业，比撒胡椒面式地招零散项目更有效率，也更容易形成产业厚度。"]]
+  ],
+  think:"这条我把握不大。苏州本地应当已有本地企业或龙头企业，选链主时是否应优先与本地企业合作？引入外来链主是否涉及地方保护问题？若面临竞争又当如何？会不会反而加剧本地竞争？——暂不确定，待进一步了解。",
+  src:"佛山新闻网 2025-12-03", url:"https://www.foshannews.net/h/175/20251203/824272.html"},
+
+ {t:"exp",side:"经验侧 · 可借鉴",loc:"浙江瑞安",title:"政府与村集体「双签约」",
+  nums:[["5.6亿","项目总投资"],["3600万羽","规划年出栏"],["1个","填补全省空白"]],
+  tabs:[
+    ["来龙去脉", ["资本下乡，企业面对的是政府，农户面对的是企业，中间少了一层保障，一旦企业经营出问题，受损失的往往是农户。","2025年2月，瑞安市农业农村局牵头举办肉鸡产业链签约仪式。企业与镇政府签商务协议，同时与村集体签土地流转合同——两份合同一起签。"]],
+    ["关键数据", ["项目总投资5.6亿元，规划年出栏肉鸡3600万羽，集养殖、屠宰分割、保鲜仓储、冷链物流、无害化处理于一体，将填补浙江省畜禽全产业链空白。","「双签约」把企业投资和村集体利益绑在一起，农户的流转收益有了正式合同保障。"]],
+    ["镜鉴", ["把企业投资和村集体利益绑在一起，从源头上减少资本烂尾伤农的后患。"]]
+  ],
+  think:"瑞安「双签约」值得肯定，把企业投资与村集体利益绑定，降低了资本烂尾伤农的风险。但潜在问题也明显：参与分配的主体增多，利益格局更复杂，蛋糕被更多方分割，政府最终获得的直接收益未必增加。",
+  src:"新京报 2024-12-21", url:"https://m.bjnews.com.cn/detail/1734765104168738.html"},
+
+ {t:"risk",side:"风险侧 · 需警惕",loc:"内蒙古巴彦淖尔",title:"签约热、落地冷",
+  nums:[["62.9%","开工率（全区第2）"],["10.7%","竣工率（全区第5）"],["29%","资金到位率（第8）"]],
+  tabs:[
+    ["来龙去脉", ["任务书中提到「某市开工率62.9%但竣工率仅10.7%、资金到位率29%」，未指明城市。经核实，主体为内蒙古巴彦淖尔市。","2023年1—11月，全市新签约国内（区外）招商引资项目89项，入统开工率62.9%，高于全区平均水平15.3个百分点，全区排名第2位。"]],
+    ["关键数据", ["竣工率10.7%，全区排名第5位；资金到位率29%，全区排名第8位。","开工率排名靠前，竣工率和资金到位率却明显靠后——签约热闹，落地冷清。这说明签约额和开工率这类「前端」指标容易做得漂亮，真正体现产业厚度的指标却往往被忽略。"]],
+    ["镜鉴", ["签约额不是终点，竣工率才是产业厚度的真指标，考核应更多关注到位资金和达产率。"]]
+  ],
+  think:"看到这组数据，第一反应是警惕——签约时热闹，落地时冷清，「重签约、轻落地」值得高度警惕。要避免这类问题，需要政府在操作上做到透明、持续，综合考量多方因素，并加强公共监督，防止虎头蛇尾、暗箱操作和资金流失。往大了说，一旦项目烂尾、资金打水漂，损害的不只是经济，还有政府公信力。",
+  src:"巴彦淖尔市人民政府官网 2024-01-05", url:"https://www.bynr.gov.cn/zfxxgk/fdzdgk/zdlyxx/zsyz/202401/t20240105_42087.html"},
+
+ {t:"risk",side:"风险侧 · 需警惕",loc:"预制菜行业",title:"同质化内卷",
+  nums:[["95→78%","产能利用率"],["90.37%","安井食品"],["-606家","三全经销商净减"]],
+  tabs:[
+    ["来龙去脉", ["预制菜赛道近年涌入大量资本，各地纷纷布局，产能迅速扩张，很快出现过剩苗头。","据尼尔森报告，行业龙头企业的产能利用率从高位的95%下滑至78%。"]],
+    ["关键数据", ["安井食品2025年产能利用率90.37%，较上年同期的97.15%明显下降；千味央厨、海欣食品等企业产能利用率下滑超过20%。","三全食品的经销商从年初4195家缩减至年末3589家，净减少606家。产能利用率下滑，意味着大量设备闲置、投资难以回收。"]],
+    ["镜鉴", ["热门赛道一哄而上容易产能过剩，应编制全市农业产业图谱，明确各板块主导赛道与禁入清单。"]]
+  ],
+  think:"要疏通上下游的沟通，明确需求与供给的关系。不能为了眼前的利益，盲目扩大一方的产能，而不顾另一方的承接能力。",
+  src:"全食在线 2026-08-31", url:"http://www.iallfood.com/nd.jsp?id=6902"},
+
+ {t:"risk",side:"风险侧 · 需警惕",loc:"审计署披露",title:"资本烂尾伤农",
+  nums:[["11.11万户","被拖欠农户"],["2.13亿","拖欠流转费"],["1843.65万","卷款跑路"]],
+  tabs:[
+    ["来龙去脉", ["工商资本下乡，本意是带动农村发展，但经营失败、拖欠农户款项的案例时有发生，受伤最深的往往是普通农户。","审计署《国务院关于2023年度中央预算执行和其他财政收支的审计工作报告》披露：相关社会资本方拖欠11.11万户农户土地流转费等2.13亿元，将农民所投资金等1843.65万元卷款「跑路」，收购农产品时恶意压价等560.64万元。"]],
+    ["关键数据", ["具体案例也不少见：黑龙江巴彦县企业无力支付租金，导致千亩良田撂荒；江西南昌县幽兰镇一个总投资1.5亿元、3000亩的现代农业生态园，企业未实际运营即注销。","这些案例的共同点是：资本进来容易，退出和善后难；一旦出问题，政府背上包袱，农户颗粒无收。"]],
+    ["镜鉴", ["资本下乡必须设「风险闸门」，应设立土地流转风险保障金，补贴兑现设刚性时限。"]]
+  ],
+  think:"这一条与前面的「签约热、落地冷」是同一问题的两个侧面。浅层看是资金层面的直接损失——农户租金、政府投入都打了水漂；深层看，代价不止于此：一旦资本烂尾、农民受损，最终透支的是政府的信用与公信力，而这恰恰是最难修复的。",
+  src:"审计署2023年度报告 2024-06-25", url:"https://www.audit.gov.cn/n5/n26/c10423410/part/10423799.pdf"},
+
+ {t:"risk",side:"风险侧 · 需警惕",loc:"苏州市吴中区",title:"重招商、轻育商",
+  nums:[["≠","新老企业待遇"],["外流","本地资本"]],
+  tabs:[
+    ["来龙去脉", ["许多地方把主要精力放在招引外地新项目上，对本地存量企业的扶持却相对薄弱，形成「招来的女婿比亲儿子受宠」的现象。","这一现象有官方文件佐证。苏州市吴中区人民政府在一份政协提案答复中坦承："]],
+    ["关键数据", ["「其他区域均对当地企业出台保护政策，与引进企业相比，对项目的争取度，当地企业更具有优先权，而吴中区则出现失衡态势，本土企业与招商企业发展的政策环境的不平等导致本地资本悄然外流，甚至流出量大于流入量的现象。」","从各地政策看，招商奖励上限普遍高于本地企业技改补贴上限，新引进项目动辄数百万元甚至上千万元奖励，而本地企业技改扩能补贴往往只有其零头。"]],
+    ["镜鉴", ["新老企业应当同权，存量主体技改扩能可视同招商引资给予奖励，留住本地资本。"]]
+  ],
+  think:"这一条恰好与前面「链主招商」那条呼应——引入外来链主会对本地链主形成剧烈竞争。若继续沿用「重招商、轻育商」的政策取向，这种不平等只会进一步加剧：外来企业享受超国民待遇，本地企业却在政策上被冷落，最终把本地资本挤走。",
+  src:"苏州市吴中区人民政府提案答复 2024-08-27", url:"http://www.szwz.gov.cn"},
+
+ {t:"risk",side:"风险侧 · 需警惕",loc:"全国",title:"科技招商转化低",
+  nums:[["30-40%","我国成果转化率"],["70-80%","发达国家"]],
+  tabs:[
+    ["来龙去脉", ["农业科技投入不少，成果产出也不少，但真正能转化为生产力的比例却偏低，实验室与田间地头之间存在断层。","全国人大代表、安徽省农科院副院长赵皖平在2024年全国两会上指出："]],
+    ["关键数据", ["我国每年约有6000—7000项农业科技成果面世，但成果转化率仅为30%—40%，远低于发达国家水平，如美国、日本等国的农业科技成果转化率为70%—80%，德英法等国更高达90%。","转化率低的背后，是科研与市场脱节、成果与需求错位。"]],
+    ["镜鉴", ["科技招商不能只看引进了多少项目，更要看成果能否从实验室走到田间地头。"]]
+  ],
+  think:"第一反应是警惕形式主义与「为达标而达标」的倾向。当考核只看「引进了多少成果」这个数字时，容易催生一批中看不中用的成果，勉强过了指标，真正能落地转化的却寥寥。这种「重数量、轻实效」的现象在各领域普遍存在，值得警醒。",
+  src:"新浪财经 2024-03-08", url:"https://finance.sina.com.cn/jjxw/2024-03-08/doc-inamrtcf8669649.shtml"},
+
+ {t:"risk",side:"风险侧 · 需警惕",loc:"呼和浩特赛罕区",title:"统计注水",
+  nums:[["95%","政府称投产率"],["2200亩","实地闲置大棚"]],
+  tabs:[
+    ["来龙去脉", ["报表上的数字和实地看到的情况，有时相差甚远。这种「数字出官、官出数字」的现象，在农业项目中同样存在。","2017年3月，央视《经济半小时》播出《呼和浩特：被撂荒的致富梦》一期。节目报道：赛罕区政府在给记者的回复函中称，「赛罕区大力发展设施蔬菜，总面积已达到5.5万亩，蔬菜投产率达到95%以上」。"]],
+    ["关键数据", ["但记者实地走访保素、添密湾、太平庄三个村，就发现有近2200亩温室大棚建成后产权不明晰、没有投入使用；进一步走访，更多空棚出现，一些村庄的大棚闲置率高达80%到90%。","政府报表上说投产率95%，实地却是连片撂荒，这种反差说明：缺乏实地核查的统计，很容易变成自我美化的数字游戏。"]],
+    ["镜鉴", ["应建立以实地核查为基础的监测机制，让数据经得起检验。"]]
+  ],
+  think:"监管不力，不够透明。这个问题比前几条更严重——报表上的数字与实地情况严重不符，一旦查实，性质可能上升到问责甚至更严重的程度。",
+  src:"央视《经济半小时》2017-03-29", url:"http://tv.cctv.com/2017/03/29/VIDE45UNxexlqjSZHqbMGqvG170329.shtml"}
+];
+
+var stage = document.getElementById("stage");
+var dots = document.getElementById("dots");
+var cur = 0;
+
+function buildSlide(d,i){
+  var sec = document.createElement("div");
+  sec.className = "slide";
+  var numsHtml = "";
+  for(var j=0;j<d.nums.length;j++){
+    numsHtml += '<div class="num"><div class="v">'+d.nums[j][0]+'</div><div class="k">'+d.nums[j][1]+'</div></div>';
+  }
+  var tabsData = d.tabs.slice();
+  var thinkContent = (d.think && d.think.length) ? d.think : '<span class="ph">（待补充 —— 我对这个案例的思考）</span>';
+  tabsData.push(["我的思考", [thinkContent]]);
+  var tabsHtml = "";
+  var panelsHtml = "";
+  for(var k=0;k<tabsData.length;k++){
+    var on = k===0 ? " on" : "";
+    tabsHtml += '<div class="tab'+on+'" data-k="'+k+'">'+tabsData[k][0]+'</div>';
+    var ps = "";
+    for(var m=0;m<tabsData[k][1].length;m++){
+      ps += '<p>'+tabsData[k][1][m]+'</p>';
+    }
+    panelsHtml += '<div class="panel'+on+'" data-k="'+k+'">'+ps+'</div>';
+  }
+  var pad = (i+1<10?"0":"")+(i+1);
+  sec.innerHTML = '<div class="card '+d.t+'">'+
+    '<div class="bar"></div>'+
+    '<div class="inner">'+
+      '<div class="ghost">'+pad+'</div>'+
+      '<div><span class="side-tag">'+d.side+'</span><span class="loc">'+d.loc+'</span></div>'+
+      '<h2>'+d.title+'</h2>'+
+      '<div class="nums">'+numsHtml+'</div>'+
+      '<div class="tabs">'+tabsHtml+'</div>'+
+      '<div class="panels">'+panelsHtml+'</div>'+
+      '<div class="src"><b>出处：</b>'+d.src+' · <a href="'+d.url+'" target="_blank">查看原文</a></div>'+
+    '</div>'+
+  '</div>';
+  return sec;
+}
+
+var slides = [];
+for(var i=0;i<DATA.length;i++){
+  var s = buildSlide(DATA[i],i);
+  stage.appendChild(s);
+  slides.push(s);
+  var dot = document.createElement("div");
+  dot.className = "dot "+DATA[i].t;
+  dot.setAttribute("data-i",i);
+  dot.onclick = (function(idx){return function(){go(idx);};})(i);
+  dots.appendChild(dot);
+}
+
+function refresh(){
+  for(var i=0;i<slides.length;i++){
+    slides[i].classList.remove("active","prev","next");
+    if(i<cur) slides[i].classList.add("prev");
+    else if(i>cur) slides[i].classList.add("next");
+    else slides[i].classList.add("active");
+  }
+  document.getElementById("cur").textContent = (cur+1<10?"0":"")+(cur+1);
+  var si = document.getElementById("sideInd");
+  si.textContent = DATA[cur].side;
+  si.style.background = DATA[cur].t==="exp" ? "var(--exp)" : "var(--risk)";
+  var ds = document.querySelectorAll(".dot");
+  for(var k=0;k<ds.length;k++){ ds[k].classList.remove("on"); }
+  ds[cur].classList.add("on");
+  document.getElementById("prevBtn").disabled = (cur===0);
+  document.getElementById("nextBtn").disabled = (cur===DATA.length-1);
+  var pr = document.getElementById("progress");
+  pr.style.width = ((cur+1)/DATA.length*100)+"%";
+  pr.style.background = DATA[cur].t==="exp" ? "var(--exp)" : "var(--risk)";
+  var activeCard = slides[cur].querySelector(".card");
+  var tabs = activeCard.querySelectorAll(".tab");
+  var panels = activeCard.querySelectorAll(".panel");
+  for(var t=0;t<tabs.length;t++){ tabs[t].classList.remove("on"); panels[t].classList.remove("on"); }
+  if(tabs[0]) tabs[0].classList.add("on");
+  if(panels[0]) panels[0].classList.add("on");
+}
+
+document.addEventListener("click", function(e){
+  if(e.target.classList.contains("tab")){
+    var card = e.target.closest(".card");
+    var k = e.target.getAttribute("data-k");
+    var tabs = card.querySelectorAll(".tab");
+    var panels = card.querySelectorAll(".panel");
+    for(var t=0;t<tabs.length;t++){ tabs[t].classList.remove("on"); }
+    for(var p=0;p<panels.length;p++){ panels[p].classList.remove("on"); }
+    e.target.classList.add("on");
+    card.querySelector('.panel[data-k="'+k+'"]').classList.add("on");
+  }
+});
+
+function go(i){ if(i<0||i>=DATA.length) return; cur=i; refresh(); }
+function next(){ if(cur<DATA.length-1) go(cur+1); }
+function prev(){ if(cur>0) go(cur-1); }
+
+document.getElementById("nextBtn").onclick = next;
+document.getElementById("prevBtn").onclick = prev;
+document.addEventListener("keydown",function(e){
+  if(e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); next(); }
+  if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); prev(); }
+});
+var startX=0,startY=0;
+document.addEventListener("touchstart",function(e){ startX=e.touches[0].clientX; startY=e.touches[0].clientY; },{passive:true});
+document.addEventListener("touchend",function(e){
+  var dx=e.changedTouches[0].clientX-startX;
+  var dy=e.changedTouches[0].clientY-startY;
+  if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)){ if(dx<0) next(); else prev(); }
+},{passive:true});
+var wheelLock=false;
+document.addEventListener("wheel",function(e){
+  if(wheelLock) return;
+  if(Math.abs(e.deltaY)<20) return;
+  wheelLock=true;
+  if(e.deltaY>0) next(); else prev();
+  setTimeout(function(){wheelLock=false;},700);
+},{passive:true});
+refresh();
+</script>
+</body>
+</html>
